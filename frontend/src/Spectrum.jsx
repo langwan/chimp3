@@ -3,7 +3,7 @@ import Sketch from "react-p5";
 import io from "socket.io-client";
 let spectrumSize = 40;
 let windowWidth = 320;
-let windowHeight = 120;
+let windowHeight = (320 / 16) * 9 + (((320 / 16) * 9) % 40);
 let count = 0;
 let r, g, b;
 let fps = 60;

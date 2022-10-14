@@ -1922,6 +1922,11 @@
     "@svgr/plugin-svgo" "^5.5.0"
     loader-utils "^2.0.0"
 
+"@tabler/icons@^1.104.0":
+  version "1.104.0"
+  resolved "https://registry.yarnpkg.com/@tabler/icons/-/icons-1.104.0.tgz#58cc09d9e11617b1d124b48300831991f74659bf"
+  integrity sha512-5AOrHjay37RmpxLpo/Cm4sHCEWuPG/pBFqJE2d4JvILXKwFa4ROTlH6G9bnAZ+yGttEW8KF0DuIKLNgvcI78Ww==
+
 "@tootallnate/once@1":
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/@tootallnate/once/-/once-1.1.2.tgz#ccb91445360179a04e7fe6aff78c00ffc1eeaf82"
