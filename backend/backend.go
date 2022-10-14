@@ -1,14 +1,8 @@
 package main
 
 import (
-	"errors"
-	"github.com/faiface/beep"
-	"github.com/faiface/beep/mp3"
-	"github.com/faiface/beep/speaker"
-	"github.com/langwan/langgo/core/log"
-	"os"
-	"strings"
-	"time"
+	"context"
+	"fmt"
 )
 
 type Backend struct {
@@ -23,25 +17,36 @@ type BackendRequest struct {
 	Paths []string
 }
 
-func (b *Backend) UpdateList(request *BackendRequest) (*Empty, error) {
+type PlayingRequest struct {
+	IsPlay bool `json:"is_play"`
+}
 
-	if !strings.HasSuffix(request.Paths[0], ".mp3") {
-		return &Empty{}, errors.New("is not mp3 file")
-	}
-	f, err := os.Open(request.Paths[0])
+var chiStreamer = ChiStreamer{}
+
+func (b *Backend) UpdateList(ctx context.Context, request *BackendRequest) (*Empty, error) {
+
+	err := Player.PlayList(request.Paths)
 	if err != nil {
 		return &Empty{}, err
 	}
-	streamer, format, err := mp3.Decode(f)
-	if err != nil {
-		return &Empty{}, err
-	}
-	log.Logger("backend", "UpdateList").Debug().Interface("format", format).Send()
-	speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
-	speaker.Play(beep.Seq(ChiStreamer{Streamer: streamer}, beep.Callback(func() {
-		done <- true
-	})))
-	isDropped = true
 
+	Player.Play(0)
+
+	return &Empty{}, nil
+}
+
+func (b *Backend) Playing(ctx context.Context, request *PlayingRequest) (*Empty, error) {
+	fmt.Println("playing request", request.IsPlay)
+	Player.Playing(request.IsPlay)
+	return &Empty{}, nil
+}
+
+func (b *Backend) Next(ctx context.Context, request *Empty) (*Empty, error) {
+	Player.Next()
+	return &Empty{}, nil
+}
+
+func (b *Backend) Prev(ctx context.Context, request *Empty) (*Empty, error) {
+	Player.Prev()
 	return &Empty{}, nil
 }

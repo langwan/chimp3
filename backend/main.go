@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/langwan/langgo"
@@ -39,7 +40,7 @@ func main() {
 		AllowFiles:             false,
 	}))
 	NewSocketIO(g)
-	backend.UpdateList(&BackendRequest{Paths: []string{"/Users/langwan/Documents/data/github/music-dl/吻别.mp3"}})
+	backend.UpdateList(context.Background(), &BackendRequest{Paths: []string{"/Users/langwan/Documents/data/github/music-dl/吻别.mp3", `/Users/langwan/Documents/data/github/music-dl/房东的猫 - 海.mp3`}})
 	rg := g.Group("rpc")
 	rg.Any("/*uri", rpc())
 	g.Run(":8000")
@@ -61,7 +62,7 @@ func rpc() gin.HandlerFunc {
 			return
 		}
 
-		response, code, err := helperGrpc.Call(backend, methodName, string(body), nil)
+		response, code, err := helperGrpc.Call(&backend, methodName, string(body), nil)
 
 		if err != nil {
 			c.AbortWithStatus(500)

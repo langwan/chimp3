@@ -1,6 +1,15 @@
-import { useEffect } from "react";
+import { IconButton, Stack, Typography } from "@mui/material";
+import {
+  IconPlayerPause,
+  IconPlayerPlay,
+  IconPlayerSkipBack,
+  IconPlayerSkipForward,
+  IconPlus,
+} from "@tabler/icons";
+import { useEffect, useState } from "react";
 import Sketch from "react-p5";
 import io from "socket.io-client";
+import { backendAxios } from "./axios";
 let spectrumSize = 40;
 let windowWidth = 320;
 let windowHeight = (320 / 16) * 9 + (((320 / 16) * 9) % 40);
@@ -24,12 +33,21 @@ let t = 0;
 var drop = [];
 
 export default (props) => {
+  const [title, setTitle] = useState("");
+  const [isPlay, setIsPlay] = useState(false);
   useEffect(() => {
     sio.on("connect", () => {
       console.log("socketio connect", sio.id);
     });
     sio.on("push", (message) => {
-      freqSpectrum = message;
+      console.log(message);
+      if ("samples" in message) {
+        freqSpectrum = message.samples;
+      } else {
+        freqSpectrum = [];
+      }
+      setIsPlay(message.is_player);
+      setTitle(message.name);
     });
   }, []);
 
@@ -45,45 +63,10 @@ export default (props) => {
     p5.fill(0);
     // p5.pixelDensity(3 / 7); //important
   };
+
   const draw = (p5) => {
     p5.background(255);
-
-    // for (var i = 0; i < 20; i++) {
-    //   drop[i].show();
-    //   drop[i].update();
-    // }
-
-    if (count++ % fps == 0) {
-      r = p5.random(255);
-      g = p5.random(255);
-      b = p5.random(255);
-    }
-
     let columnWidth = windowWidth / spectrumSize;
-    for (var i = 0; i < spectrumSize; i++) {
-      let height = freqSpectrum[i];
-      // p5.stroke(23, 23, 23);
-      p5.fill(r, g, b, 50);
-      p5.rect(columnWidth * i, windowHeight / 2 - height, columnWidth, height);
-      p5.fill(Math.max(0, r - 80), Math.max(g - 80), Math.max(b - 80));
-      p5.rect(columnWidth * i, windowHeight / 2, columnWidth, height);
-    }
-    //p5.scale(7);
-    // for (var i = 0; i < 100; i++) {
-    //   for (var j = 0; j < 50; j++) {
-    //     p5.rect(
-    //       i,
-    //       j,
-    //       ((p5.sin(j * j + i / j - t * 7) +
-    //         p5.cos(j ** 5 - (i / j) * 6 + t) ** 3) *
-    //         j) /
-    //         50,
-    //       1
-    //     );
-    //   }
-    // }
-
-    // t += 0.01;
     gridWidth = columnWidth;
     for (let i = 0; i <= windowWidth / gridWidth; i++) {
       for (let j = 0; j <= windowHeight / gridWidth; j++) {
@@ -92,8 +75,79 @@ export default (props) => {
         p5.line(0, j * gridWidth, windowWidth, j * gridWidth);
       }
     }
+    if (!freqSpectrum || freqSpectrum.length == 0) {
+      return;
+    }
+
+    if (count++ % fps == 0) {
+      r = p5.random(255);
+      g = p5.random(255);
+      b = p5.random(255);
+    }
+
+    for (var i = 0; i < spectrumSize; i++) {
+      let height = freqSpectrum[i];
+      // p5.stroke(23, 23, 23);
+      p5.fill(r, g, b);
+      p5.rect(columnWidth * i, windowHeight / 2 - height, columnWidth, height);
+      p5.fill(r, g, b, 80);
+      p5.rect(columnWidth * i, windowHeight / 2, columnWidth, height);
+    }
   };
-  return <Sketch setup={setup} draw={draw} />;
+
+  const onNext = async (event) => {
+    await backendAxios.post("/rpc/Next", {});
+  };
+  return (
+    <Stack
+      direction={"column"}
+      justifyContent="space-between"
+      alignItems="center"
+    >
+      <Stack
+        direction={"row"}
+        width="100%"
+        justifyContent="space-between"
+        alignItems="center"
+      >
+        <Stack direction={"row"}>
+          <IconButton>
+            <IconPlus stroke={0.5} />
+          </IconButton>
+          <IconButton
+            onClick={async (event) => {
+              await backendAxios.post("/rpc/Prev", {});
+            }}
+          >
+            <IconPlayerSkipBack stroke={0.5} />
+          </IconButton>
+          <IconButton
+            onClick={async (event) => {
+              console.log("isPlay", !isPlay);
+              await backendAxios.post("/rpc/Playing", { is_play: !isPlay });
+            }}
+          >
+            {isPlay ? (
+              <IconPlayerPause stroke={0.5} />
+            ) : (
+              <IconPlayerPlay stroke={0.5} />
+            )}
+          </IconButton>
+          <IconButton
+            onClick={async (event) => {
+              await backendAxios.post("/rpc/Next", {});
+            }}
+          >
+            <IconPlayerSkipForward stroke={0.5} />
+          </IconButton>
+        </Stack>
+        <Typography align="right" sx={{ flexGrow: 1 }}>
+          {title}
+        </Typography>
+      </Stack>
+      <Sketch setup={setup} draw={draw} />
+    </Stack>
+  );
 };
 
 function Drop(p5) {
