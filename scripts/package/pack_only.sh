@@ -1,0 +1,2 @@
+cd ../../window
+yarn dist

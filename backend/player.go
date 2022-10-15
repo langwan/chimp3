@@ -6,10 +6,10 @@ import (
 	"github.com/hajimehoshi/oto"
 	"github.com/langwan/langgo/core/log"
 	"io"
+	"path/filepath"
 	"time"
 
 	"os"
-	"path"
 	"strings"
 )
 
@@ -51,7 +51,7 @@ func (p *Player) Update() {
 	for {
 		select {
 		case filename := <-p.Change:
-			name := strings.Split(path.Base(filename), ".")
+			name := strings.Split(filepath.Base(filename), ".")
 			p.Current.Name = name[0]
 			p.Current.Filepath = filename
 			p.IsPlay = false

@@ -1,9 +1,10 @@
 {
-  "name": "chimp3",
+  "name": "CHIMP3",
   "version": "2.0.0",
-  "description": "定制开发请在B站找痴货发明家联系作者",
+  "description": "开源 https://github.com/langwan/chimp3",
+  "author": "Langwan B站痴货发明家 (https://space.bilibili.com/401571418)",
   "main": "src/main.js",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "@electron-forge/cli": "^6.0.0-beta.66",
     "electron": "^21.0.1"

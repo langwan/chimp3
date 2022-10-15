@@ -1,4 +1,4 @@
-import { IconButton, Stack, Typography } from "@mui/material";
+import { Box, IconButton, Stack, Typography } from "@mui/material";
 import {
   IconPlayerPause,
   IconPlayerPlay,
@@ -147,18 +147,27 @@ export default (props) => {
             <IconPlayerSkipForward stroke={0.5} />
           </IconButton>
         </Stack>
-        <Typography
-          variant="subtitle1"
-          align="right"
-          sx={{
-            flexGrow: 1,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {title == "" ? "CHIMP3" : title}
-        </Typography>
+
+        {title == "" ? (
+          <Box
+            component={"img"}
+            sx={{ width: 32, height: 32 }}
+            src={process.env.PUBLIC_URL + "/icon.png"}
+          />
+        ) : (
+          <Typography
+            variant="subtitle1"
+            align="right"
+            sx={{
+              flexGrow: 1,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {title}
+          </Typography>
+        )}
       </Stack>
       <Sketch setup={setup} draw={draw} />
     </Stack>

@@ -2,7 +2,7 @@ const { app, BrowserWindow, ipcMain } = require("electron");
 
 const freeport = require("freeport");
 const fetch = require("electron-fetch").default;
-
+const windowHeight = process.platform == "win32" ? 320 : 300;
 const { execFile } = require("child_process");
 let backendPort = 8000;
 let win = null;
@@ -28,22 +28,17 @@ app.whenReady().then(() => {
         if (win != null) {
           return;
         }
-        let additionalArguments = [
-          "NODE_TLS_REJECT_UNAUTHORIZED=0",
-          "REACT_APP_BACKEND_HOST=" + "localhost:" + port,
-        ];
-        console.log(additionalArguments);
+
         win = new BrowserWindow({
           title: "chimp3 v2",
           width: 360,
-          height: 300,
+          height: windowHeight,
           maximizable: false,
           resizable: process.env.NODE_ENV == "development" ? true : false,
-          maximizable: true,
           webPreferences: {
             nodeIntegration: true,
             enableRemoteModule: true,
-            additionalArguments: additionalArguments,
+
             webSecurity: false,
           },
         });
