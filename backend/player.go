@@ -25,6 +25,7 @@ type Player struct {
 		Mp3Decoder *mp3.Decoder
 		FileBuffer []byte
 	}
+	Mode          int
 	IsPlay        bool
 	Change        chan string
 	Buffer        []byte

@@ -44,6 +44,11 @@ func (b *Backend) Prev(ctx context.Context, request *Empty) (*Empty, error) {
 	return &Empty{}, nil
 }
 
+func (b *Backend) Mode(ctx context.Context, request *Empty) (*Empty, error) {
+	PlayerList.Player.Mode = (PlayerList.Player.Mode + 1) % 4
+	return &Empty{}, nil
+}
+
 func (b *Backend) FileMulti(ctx context.Context, request *Empty) (*Empty, error) {
 	files, err := zenity.SelectFileMultiple(
 		zenity.FileFilters{

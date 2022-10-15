@@ -12,6 +12,7 @@ import io from "socket.io-client";
 import { backendAxios } from "./axios";
 let spectrumSize = 40;
 let windowWidth = 320;
+const maxColor = 200;
 let windowHeight = (windowWidth / 16) * 9 + (((windowWidth / 16) * 9) % 40);
 let count = 0;
 let r, g, b;
@@ -38,10 +39,10 @@ var drop = [];
 export default (props) => {
   const [title, setTitle] = useState("CHIMP3");
   const [isPlay, setIsPlay] = useState(false);
+  const [mode, setMode] = useState(0);
   useEffect(() => {
     sio.on("connect", () => {});
     sio.on("push", (message) => {
-      console.log(message);
       if ("samples" in message) {
         freqSpectrum = message.samples;
       } else {
@@ -49,49 +50,51 @@ export default (props) => {
       }
       setIsPlay(message.is_player);
       setTitle(message.name);
+      setMode(message.mode);
     });
   }, []);
 
   const setup = (p5, canvasParentRef) => {
     p5.createCanvas(windowWidth, windowHeight).parent(canvasParentRef);
     p5.frameRate(fps);
-    orange = p5.color(255, 161, 0);
-    green = p5.color(0, 228, 48);
-    // for (var i = 0; i < 200; i++) {
-    //   drop[i] = new Drop(p5);
-    // }
-    p5.noStroke();
-    p5.fill(0);
-    // p5.pixelDensity(3 / 7); //important
   };
 
   const draw = (p5) => {
     p5.background(255);
     let columnWidth = windowWidth / spectrumSize;
     gridWidth = columnWidth;
-    for (let i = 0; i <= windowWidth / gridWidth; i++) {
-      for (let j = 0; j <= windowHeight / gridWidth; j++) {
-        p5.stroke(gridColor, 0, 0, 1);
-        p5.line(i * gridWidth, 0, i * gridWidth, windowHeight);
-        p5.line(0, j * gridWidth, windowWidth, j * gridWidth);
+    if (mode != 2 && mode != 3) {
+      for (let i = 0; i <= windowWidth / gridWidth; i++) {
+        for (let j = 0; j <= windowHeight / gridWidth; j++) {
+          p5.stroke(gridColor, 0, 0, 1);
+          p5.line(i * gridWidth, 0, i * gridWidth, windowHeight);
+          p5.line(0, j * gridWidth, windowWidth, j * gridWidth);
+        }
       }
     }
+
     if (!freqSpectrum || freqSpectrum.length == 0) {
       return;
     }
 
-    if (count++ % fps == 0) {
-      r = p5.random(255);
-      g = p5.random(255);
-      b = p5.random(255);
+    if (mode == 0 || mode == 1) {
+      if (count++ % fps == 0) {
+        r = p5.random(maxColor);
+        g = p5.random(maxColor);
+        b = p5.random(maxColor);
+      }
+    } else {
+      r = 84;
+      g = 86;
+      b = 93;
     }
 
     for (var i = 0; i < spectrumSize; i++) {
-      let height = freqSpectrum[i];
-      // p5.stroke(23, 23, 23);
+      let height = freqSpectrum[0][i];
       p5.fill(r, g, b);
       p5.rect(columnWidth * i, windowHeight / 2 - height, columnWidth, height);
       p5.fill(r, g, b, 80);
+      height = freqSpectrum[1][i];
       p5.rect(columnWidth * i, windowHeight / 2, columnWidth, height);
     }
   };
@@ -169,28 +172,13 @@ export default (props) => {
           </Typography>
         )}
       </Stack>
-      <Sketch setup={setup} draw={draw} />
+      <Box
+        onClick={async (event) => {
+          await backendAxios.post("/rpc/Mode", {});
+        }}
+      >
+        <Sketch setup={setup} draw={draw} />
+      </Box>
     </Stack>
   );
 };
-
-function Drop(p5) {
-  p5.noStroke();
-  this.x = p5.random(0, windowWidth);
-  this.y = p5.random(0, -windowHeight);
-
-  this.show = function () {
-    p5.fill(0);
-    p5.ellipse(this.x, this.y, p5.random(1, 5), p5.random(1, 5));
-  };
-  this.update = function () {
-    this.speed = p5.random(5, 10);
-    this.gravity = 1.05;
-    this.y = this.y + this.speed * this.gravity;
-
-    if (this.y > windowHeight) {
-      this.y = p5.random(0, -windowHeight);
-      this.gravity = 0;
-    }
-  };
-}

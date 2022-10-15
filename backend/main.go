@@ -35,47 +35,73 @@ func main() {
 					Filepath string    `json:"filepath"`
 					IsPlay   bool      `json:"is_player"`
 					Samples  []float64 `json:"samples"`
+					Mode     int       `json:"mode"`
 				}{
 					Name:     p.Current.Name,
 					Filepath: p.Current.Filepath,
 					IsPlay:   false,
 					Samples:  nil,
+					Mode:     p.Mode,
 				})
 			}
 
 			return
 		}
-
-		var ware = make([]float64, len(samples))
+		var ware [2][]float64
+		ware[0] = make([]float64, len(samples))
+		ware[1] = make([]float64, len(samples))
 		for i := 0; i < len(samples); i++ {
-			ware[i] = samples[i][0] + samples[i][1]
+			ware[0][i] = samples[i][0]
+			ware[1][i] = samples[i][1]
 		}
-		wareReal := fft.FFTReal(ware)
+		
+		wareReal := fft.FFTReal(ware[0])
 		var max float64 = 0
 		for i := 0; i < len(samples); i++ {
 			fr := real(wareReal[i])
 			fi := imag(wareReal[i])
 			magnitude := math.Sqrt(fr*fr + fi*fi)
-			ware[i] = magnitude
+			ware[0][i] = magnitude
 			if magnitude > max {
 				max = magnitude
 			}
 		}
 		for i := 0; i < len(samples); i++ {
-			ware[i] = RangeConvert(ware[i], 0, max, 0, 60)
+			ware[0][i] = RangeConvert(ware[0][i], 0, max, 0, 60)
+		}
+		if p.Mode == 0 || p.Mode == 3 {
+			wareReal = fft.FFTReal(ware[1])
+		} else {
+			wareReal = fft.FFTReal(ware[0])
+		}
+
+		max = 0
+		for i := 0; i < len(samples); i++ {
+			fr := real(wareReal[i])
+			fi := imag(wareReal[i])
+			magnitude := math.Sqrt(fr*fr + fi*fi)
+			ware[1][i] = magnitude
+			if magnitude > max {
+				max = magnitude
+			}
+		}
+		for i := 0; i < len(samples); i++ {
+			ware[1][i] = RangeConvert(ware[1][i], 0, max, 0, 60)
 		}
 
 		if socketio != nil {
 			socketio.BroadcastToAll("push", &struct {
-				Name     string    `json:"name"`
-				Filepath string    `json:"filepath"`
-				IsPlay   bool      `json:"is_player"`
-				Samples  []float64 `json:"samples"`
+				Name     string       `json:"name"`
+				Filepath string       `json:"filepath"`
+				IsPlay   bool         `json:"is_player"`
+				Samples  [2][]float64 `json:"samples"`
+				Mode     int          `json:"mode"`
 			}{
 				Name:     p.Current.Name,
 				Filepath: p.Current.Filepath,
 				IsPlay:   p.IsPlay,
 				Samples:  ware,
+				Mode:     p.Mode,
 			})
 		}
 	}
