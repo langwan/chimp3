@@ -1,7 +1,8 @@
 package main
 
 import (
-	helperGrpc "github.com/langwan/langgo/helpers/grpc"
+	"context"
+	"github.com/langwan/langgo/helpers/code"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -13,13 +14,13 @@ func TestRangeConvert(t *testing.T) {
 }
 
 func TestCall(t *testing.T) {
-	response, code, err := helperGrpc.Call(&backend, "Next", "", nil)
+	response, code, err := code.Call(context.Background(), &backend, "Next", "")
 	assert.NoError(t, err)
 	assert.Equal(t, code, 0)
 	t.Log(response)
 }
 func TestCall2(t *testing.T) {
-	response, code, err := helperGrpc.Call(&backend, "Playing", "{is_play:1}", nil)
+	response, code, err := code.Call(context.Background(), &backend, "Playing", "{is_play:1}")
 	assert.NoError(t, err)
 	assert.Equal(t, code, 0)
 	t.Log(response)

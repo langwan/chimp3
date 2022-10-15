@@ -2,7 +2,8 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"errors"
+	"github.com/ncruces/zenity"
 )
 
 type Backend struct {
@@ -20,33 +21,52 @@ type BackendRequest struct {
 type PlayingRequest struct {
 	IsPlay bool `json:"is_play"`
 }
+type HelloResponse struct {
+	Message string `json:"message"`
+}
 
-var chiStreamer = ChiStreamer{}
-
-func (b *Backend) UpdateList(ctx context.Context, request *BackendRequest) (*Empty, error) {
-
-	err := Player.PlayList(request.Paths)
-	if err != nil {
-		return &Empty{}, err
-	}
-
-	Player.Play(0)
-
-	return &Empty{}, nil
+func (b *Backend) Hello(ctx context.Context, request *Empty) (*HelloResponse, error) {
+	return &HelloResponse{Message: "hello"}, nil
 }
 
 func (b *Backend) Playing(ctx context.Context, request *PlayingRequest) (*Empty, error) {
-	fmt.Println("playing request", request.IsPlay)
-	Player.Playing(request.IsPlay)
+	PlayerList.Playing(request.IsPlay)
 	return &Empty{}, nil
 }
 
 func (b *Backend) Next(ctx context.Context, request *Empty) (*Empty, error) {
-	Player.Next()
+	PlayerList.Next()
 	return &Empty{}, nil
 }
 
 func (b *Backend) Prev(ctx context.Context, request *Empty) (*Empty, error) {
-	Player.Prev()
+	PlayerList.Prev()
 	return &Empty{}, nil
+}
+
+func (b *Backend) FileMulti(ctx context.Context, request *Empty) (*Empty, error) {
+	files, err := zenity.SelectFileMultiple(
+		zenity.FileFilters{
+			{"选择mp3文件", []string{"*.mp3"}},
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	if err != nil {
+		return &Empty{}, err
+	} else if len(files) < 1 {
+		return &Empty{}, errors.New("selected files is empty")
+	}
+	err = PlayerList.PlayList(files)
+	if err != nil {
+		return nil, err
+	}
+	PlayerList.Play(0)
+	return &Empty{}, nil
+}
+func RangeConvert(value float64, s1 float64, s2 float64, d1 float64, d2 float64) float64 {
+	w1 := s2 - s1
+	w2 := d2 - d1
+	return (value+s1)/w1*w2 + d1
 }

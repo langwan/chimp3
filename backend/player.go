@@ -1,122 +1,138 @@
 package main
 
 import (
-	"errors"
-	"fmt"
-	"github.com/faiface/beep"
-	"github.com/faiface/beep/mp3"
-	"github.com/faiface/beep/speaker"
+	"bytes"
+	"github.com/hajimehoshi/go-mp3"
+	"github.com/hajimehoshi/oto"
+	"github.com/langwan/langgo/core/log"
+	"io"
+	"time"
+
 	"os"
 	"path"
 	"strings"
-	"time"
 )
 
-type player struct {
-	Files   []string
-	Current struct {
-		Index      int
-		Filepath   string
+type Streamer struct {
+}
+
+type Player struct {
+	otoContext *oto.Context
+	otoPlayer  *oto.Player
+	Current    struct {
 		Name       string
-		IsPlay     bool
-		FileHandle *os.File
-		Streamer   beep.StreamSeekCloser
+		Filepath   string
+		Mp3Decoder *mp3.Decoder
+		FileBuffer []byte
 	}
-	IsInit bool
+	IsPlay        bool
+	Change        chan string
+	Buffer        []byte
+	UpdateSamples func(p *Player, samples [][2]float64)
 }
 
-var Player player
+func New() *Player {
 
-func (p *player) PlayList(files []string) error {
+	p := Player{}
+	p.otoContext, _ = oto.NewContext(44100, 2, 2, 17640)
+	p.otoPlayer = p.otoContext.NewPlayer()
 
-	for _, f := range files {
-		if !strings.HasSuffix(f, ".mp3") {
-			continue
-		}
-		p.Files = append(p.Files, f)
-	}
+	p.Change = make(chan string)
+	go p.Update()
+	return &p
+}
 
-	if len(p.Files) < 1 {
-		return errors.New("playlist is empty")
-	}
+func (p *Player) Play(filename string) (err error) {
+	p.Change <- filename
 	return nil
 }
 
-func (p *player) Next() (err error) {
-	if p.Current.Index > len(p.Files)-2 {
-		p.Current.Index = len(p.Files) - 1
-	} else {
-		p.Current.Index = p.Current.Index + 1
+func (p *Player) Update() {
+	for {
+		select {
+		case filename := <-p.Change:
+			name := strings.Split(path.Base(filename), ".")
+			p.Current.Name = name[0]
+			p.Current.Filepath = filename
+			p.IsPlay = false
+			var err error
+			p.Current.FileBuffer, err = os.ReadFile(filename)
+			if err != nil {
+				continue
+			}
+			reader := bytes.NewReader(p.Current.FileBuffer)
+			p.Current.Mp3Decoder, err = mp3.NewDecoder(reader)
+			if err != nil {
+				continue
+			}
+			p.Buffer = make([]byte, 17640)
+			p.Current.Mp3Decoder.Seek(0, 0)
+			p.IsPlay = true
+		default:
+			if p.IsPlay {
+				log.Logger("backend", "player.Update").Debug().Bool("isplay", p.IsPlay).Str("name", p.Current.Name).Send()
+				buf := make([]byte, 17640)
+				reads := 0
+				isEof := false
+
+				for {
+					read, err := p.Current.Mp3Decoder.Read(p.Buffer[:len(buf)-reads])
+					for i := 0; i < read; i++ {
+						buf[reads+i] = p.Buffer[i]
+					}
+					reads += read
+					if err == io.EOF {
+						isEof = true
+						break
+					} else if reads == len(buf) {
+						break
+					}
+				}
+
+				samples, err := readSamples(buf[:reads])
+				if err != nil {
+
+					return
+				}
+				p.UpdateSamples(p, samples)
+				_, err = p.otoPlayer.Write(buf[:reads])
+				if err != nil {
+
+					return
+				}
+
+				if isEof {
+					p.IsPlay = false
+					p.UpdateSamples(p, nil)
+				}
+			} else {
+				p.UpdateSamples(p, nil)
+				time.Sleep(time.Second / 10)
+			}
+		}
 	}
-	return p.Play(p.Current.Index)
 }
 
-func (p *player) Prev() (err error) {
-	if p.Current.Index < 1 {
-		p.Current.Index = 0
-	} else {
-		p.Current.Index = p.Current.Index - 1
+func readSamples(buf []byte) ([][2]float64, error) {
+	format := Format{
+		SampleRate:  44100,
+		NumChannels: 2,
+		Precision:   2,
 	}
-	return p.Play(p.Current.Index)
-}
-
-func (p *player) Play(index int) (err error) {
-
-	if len(p.Files) < 1 {
-		return errors.New("playlist is empty")
-	} else if index > len(p.Files)-1 {
-		return errors.New("playlist file not find")
+	samples := make([][2]float64, len(buf)/(format.NumChannels*format.Precision))
+	var tmp [4]byte
+	reader := bytes.NewReader(buf)
+	i := 0
+	for {
+		_, err := reader.Read(tmp[:])
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return samples, err
+		} else {
+			samples[i], _ = format.DecodeSigned(tmp[:])
+			i++
+		}
 	}
-	p.Current.Filepath = p.Files[index]
-
-	name := strings.Split(path.Base(p.Current.Filepath), ".")
-	p.Current.Name = name[0]
-
-	format, err := func() (beep.Format, error) {
-		speaker.Lock()
-		defer speaker.Unlock()
-		var format beep.Format
-		if p.Current.Streamer != nil {
-			p.Current.Streamer.Close()
-		}
-		if p.Current.FileHandle != nil {
-			p.Current.FileHandle.Close()
-		}
-
-		p.Current.FileHandle, err = os.Open(p.Current.Filepath)
-		if err != nil {
-			return format, err
-		}
-
-		p.Current.Streamer, format, err = mp3.Decode(p.Current.FileHandle)
-		if err != nil {
-			return format, err
-		}
-		p.Current.IsPlay = true
-		return format, nil
-	}()
-	if err != nil {
-		return err
-	}
-
-	if !p.IsInit {
-		p.IsInit = true
-		speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
-		speaker.Play(beep.Seq(ChiStreamer{Player: p}), beep.Callback(func() {
-			//p.Current.IsPlay = false
-			socketio.BroadcastToAll("push", &Message{
-				Name:     p.Current.Name,
-				Filepath: p.Current.Filepath,
-				IsPlay:   p.Current.IsPlay,
-				Samples:  nil,
-			})
-		}))
-	}
-
-	return nil
-}
-
-func (p *player) Playing(isPlay bool) {
-	fmt.Println("playing", isPlay)
-	p.Current.IsPlay = isPlay
+	return samples, nil
 }

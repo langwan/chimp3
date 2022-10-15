@@ -1,8 +1,49 @@
 {
-  "version": "1.0.0",
+  "name": "chimp3",
+  "version": "2.0.0",
+  "description": "定制开发请在B站找痴货发明家联系作者",
   "main": "src/main.js",
+  "license": "ISC",
   "devDependencies": {
     "@electron-forge/cli": "^6.0.0-beta.66",
     "electron": "^21.0.1"
-  },"scripts": {"start":"electron-forge start"}
+  },
+  "scripts": {
+    "start": "electron-forge start",
+    "dev": "NODE_ENV=development electron-forge start",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder --win --mac"
+  },
+  "dependencies": {
+    "electron-fetch": "^1.9.1",
+    "freeport": "^1.0.5"
+  },
+
+  "build": {
+    "appId": "chimp3",
+    "mac": {
+      "category": "langwan.chihuo.chimp3",
+      "icon": "./build/icon.png",
+      "target": {
+        "target": "default",
+        "arch": [
+          "x64",
+          "arm64"
+        ]
+      }
+    },
+    "win": {
+      "icon": "./build/icon@0.5x.png",
+      "target": {
+        "target": "nsis",
+        "arch": [
+          "x64"
+        ]
+      }
+    },
+    "directories": {
+      "output": "../releases/${platform}/${arch}"
+    },
+    "asar": false
+  }
 }

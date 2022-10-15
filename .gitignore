@@ -1,4 +1,6 @@
-.idea
-frontend/node_modules
-backend/logs
-window/node_modules
+.idea/
+node_modules/
+logs/
+releases/
+bin/
+frontend/build

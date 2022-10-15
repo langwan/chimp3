@@ -12,7 +12,7 @@ import io from "socket.io-client";
 import { backendAxios } from "./axios";
 let spectrumSize = 40;
 let windowWidth = 320;
-let windowHeight = (320 / 16) * 9 + (((320 / 16) * 9) % 40);
+let windowHeight = (windowWidth / 16) * 9 + (((windowWidth / 16) * 9) % 40);
 let count = 0;
 let r, g, b;
 let fps = 60;
@@ -23,22 +23,23 @@ let gridWidth = 10;
 let gridColor = 0;
 let density = 3;
 let freqSpectrum = [];
-const sio = io("ws://localhost:8000", {
-  transports: ["websocket"],
-  reconnect: true,
-});
+const sio = io(
+  process.env.NODE_ENV === "development" ? "ws://127.0.0.1:8000" : "/",
+  {
+    transports: ["websocket"],
+    reconnect: true,
+  }
+);
 
 let t = 0;
 //rain
 var drop = [];
 
 export default (props) => {
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState("CHIMP3");
   const [isPlay, setIsPlay] = useState(false);
   useEffect(() => {
-    sio.on("connect", () => {
-      console.log("socketio connect", sio.id);
-    });
+    sio.on("connect", () => {});
     sio.on("push", (message) => {
       console.log(message);
       if ("samples" in message) {
@@ -106,13 +107,18 @@ export default (props) => {
     >
       <Stack
         direction={"row"}
-        width="100%"
+        width={windowWidth}
         justifyContent="space-between"
         alignItems="center"
       >
-        <Stack direction={"row"}>
+        <Stack direction={"row"} justifyContent="flex-start">
           <IconButton>
-            <IconPlus stroke={0.5} />
+            <IconPlus
+              onClick={async (event) => {
+                await backendAxios.post("/rpc/FileMulti", {});
+              }}
+              stroke={0.5}
+            />
           </IconButton>
           <IconButton
             onClick={async (event) => {
@@ -141,8 +147,17 @@ export default (props) => {
             <IconPlayerSkipForward stroke={0.5} />
           </IconButton>
         </Stack>
-        <Typography align="right" sx={{ flexGrow: 1 }}>
-          {title}
+        <Typography
+          variant="subtitle1"
+          align="right"
+          sx={{
+            flexGrow: 1,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {title == "" ? "CHIMP3" : title}
         </Typography>
       </Stack>
       <Sketch setup={setup} draw={draw} />

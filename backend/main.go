@@ -2,48 +2,95 @@ package main
 
 import (
 	"context"
+	"flag"
+	"fmt"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/langwan/langgo"
+	"github.com/langwan/langgo/core"
+	"github.com/langwan/langgo/helpers/code"
 	helperGin "github.com/langwan/langgo/helpers/gin"
-	helperGrpc "github.com/langwan/langgo/helpers/grpc"
+	"github.com/mjibson/go-dsp/fft"
 	"io"
-	"sync"
-	"time"
+	"math"
+	"net/http"
+	"os"
 )
 
-const peakFalloff = 8.0
-const defaultWindowWidth = 800
-const defaultWindowHeight = 100
-
-var fftOutput []complex128
-var fftOutputLock sync.RWMutex
-var isDropped = false
-var done = make(chan bool)
-var isPlayer = false
-var freqSpectrum []float64
-
 func main() {
+	var port int
+	flag.IntVar(&port, "port", 8000, "http port")
+	flag.Parse()
 	langgo.Run()
 	gin.SetMode(gin.ReleaseMode)
 	g := gin.New()
-	g.Use(cors.New(cors.Config{
-		AllowAllOrigins:        true,
-		AllowMethods:           []string{"POST"},
-		AllowHeaders:           []string{"*	"},
-		AllowCredentials:       false,
-		ExposeHeaders:          nil,
-		MaxAge:                 12 * time.Hour,
-		AllowWildcard:          false,
-		AllowBrowserExtensions: false,
-		AllowWebSockets:        false,
-		AllowFiles:             false,
-	}))
+	g.Use(cors.Default())
 	NewSocketIO(g)
-	backend.UpdateList(context.Background(), &BackendRequest{Paths: []string{"/Users/langwan/Documents/data/github/music-dl/吻别.mp3", `/Users/langwan/Documents/data/github/music-dl/房东的猫 - 海.mp3`}})
-	rg := g.Group("rpc")
+	PlayerList = _PlayList{Player: New()}
+	PlayerList.Player.UpdateSamples = func(p *Player, samples [][2]float64) {
+		if samples == nil {
+			if socketio != nil {
+				socketio.BroadcastToAll("push", &struct {
+					Name     string    `json:"name"`
+					Filepath string    `json:"filepath"`
+					IsPlay   bool      `json:"is_player"`
+					Samples  []float64 `json:"samples"`
+				}{
+					Name:     p.Current.Name,
+					Filepath: p.Current.Filepath,
+					IsPlay:   false,
+					Samples:  nil,
+				})
+			}
+
+			return
+		}
+
+		var ware = make([]float64, len(samples))
+		for i := 0; i < len(samples); i++ {
+			ware[i] = samples[i][0] + samples[i][1]
+		}
+		wareReal := fft.FFTReal(ware)
+		var max float64 = 0
+		for i := 0; i < len(samples); i++ {
+			fr := real(wareReal[i])
+			fi := imag(wareReal[i])
+			magnitude := math.Sqrt(fr*fr + fi*fi)
+			ware[i] = magnitude
+			if magnitude > max {
+				max = magnitude
+			}
+		}
+		for i := 0; i < len(samples); i++ {
+			ware[i] = RangeConvert(ware[i], 0, max, 0, 60)
+		}
+
+		if socketio != nil {
+			socketio.BroadcastToAll("push", &struct {
+				Name     string    `json:"name"`
+				Filepath string    `json:"filepath"`
+				IsPlay   bool      `json:"is_player"`
+				Samples  []float64 `json:"samples"`
+			}{
+				Name:     p.Current.Name,
+				Filepath: p.Current.Filepath,
+				IsPlay:   p.IsPlay,
+				Samples:  ware,
+			})
+		}
+	}
+	rg := g.Group("/rpc")
 	rg.Any("/*uri", rpc())
-	g.Run(":8000")
+
+	if core.EnvName == core.Production {
+		g.StaticFS("app", http.Dir("./frontend"))
+		g.NoRoute(func(c *gin.Context) {
+			c.File("./frontend/index.html")
+		})
+	}
+	host := fmt.Sprintf(":%d", port)
+	fmt.Printf("http start %s\n", host)
+	g.Run(host)
 }
 
 func rpc() gin.HandlerFunc {
@@ -62,7 +109,12 @@ func rpc() gin.HandlerFunc {
 			return
 		}
 
-		response, code, err := helperGrpc.Call(&backend, methodName, string(body), nil)
+		if methodName == "Quit" {
+			helperGin.SendOk(c, "ok")
+			os.Exit(0)
+		}
+
+		response, code, err := code.Call(context.Background(), &backend, methodName, string(body))
 
 		if err != nil {
 			c.AbortWithStatus(500)
@@ -73,5 +125,20 @@ func rpc() gin.HandlerFunc {
 		}
 
 		helperGin.SendOk(c, response)
+	}
+}
+func CORSMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT")
+
+		if c.Request.Method == "OPTIONS" {
+			c.Status(204)
+			return
+		}
+
+		c.Next()
 	}
 }
