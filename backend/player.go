@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/hajimehoshi/go-mp3"
 	"github.com/hajimehoshi/oto"
 	"github.com/langwan/langgo/core/log"
@@ -110,7 +109,7 @@ func (p *Player) Update() {
 					nextId, ok := p.PlayList.hasNext()
 					if ok {
 						go func() {
-							fmt.Println("nextID", nextId)
+
 							p.PlayList.Play(nextId)
 						}()
 					}

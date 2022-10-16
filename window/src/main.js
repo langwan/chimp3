@@ -71,6 +71,36 @@ app.whenReady().then(() => {
               });
             },
           },
+          {
+            label: "风格 单击示波器可以切换风格",
+            click() {
+              openAboutWindow({
+                icon_path: __dirname + "/bin/frontend/icon.png",
+                product_name: "CHIMP3",
+                bug_report_url: "https://github.com/langwan/chimp3/issues",
+                copyright: "2022 痴货发明家(langwan)",
+                homepage: "https://space.bilibili.com/401571418",
+                description: "订制开发请找作者 B站 痴货发明家",
+                license: "MIT",
+                use_version_info: true,
+              });
+            },
+          },
+          {
+            label: "播放 支持单曲暂停、多曲连放",
+            click() {
+              openAboutWindow({
+                icon_path: __dirname + "/bin/frontend/icon.png",
+                product_name: "CHIMP3",
+                bug_report_url: "https://github.com/langwan/chimp3/issues",
+                copyright: "2022 痴货发明家(langwan)",
+                homepage: "https://space.bilibili.com/401571418",
+                description: "订制开发请找作者 B站 痴货发明家",
+                license: "MIT",
+                use_version_info: true,
+              });
+            },
+          },
         ],
       };
       const menu = Menu.buildFromTemplate([appMenu]);
