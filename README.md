@@ -2,10 +2,10 @@
 
 一款跨平台 支持 mac / win 的MP3播放器
 
-![chimp3 v2 1]("resources/chimp3v21.png")
-![chimp3 v2 2]("resources/chimp3v22.png")
-![chimp3 v2 3]("resources/chimp3v23.png")
-![chimp3 v2 4]("resources/chimp3v24.png")
+![chimp3 v2 1](resources/chimp3v21.png)
+![chimp3 v2 2](resources/chimp3v22.png)
+![chimp3 v2 3](resources/chimp3v23.png)
+![chimp3 v2 4](resources/chimp3v24.png)
 
 ## 目录
 
@@ -45,3 +45,4 @@ cd scripts/package
 
 ## 安装包下载
 
+https://github.com/langwan/chimp3/releases
