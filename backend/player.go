@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/hajimehoshi/go-mp3"
 	"github.com/hajimehoshi/oto"
 	"github.com/langwan/langgo/core/log"
@@ -30,6 +31,7 @@ type Player struct {
 	Change        chan string
 	Buffer        []byte
 	UpdateSamples func(p *Player, samples [][2]float64)
+	PlayList      *_PlayList
 }
 
 func New() *Player {
@@ -105,6 +107,13 @@ func (p *Player) Update() {
 				if isEof {
 					p.IsPlay = false
 					p.UpdateSamples(p, nil)
+					nextId, ok := p.PlayList.hasNext()
+					if ok {
+						go func() {
+							fmt.Println("nextID", nextId)
+							p.PlayList.Play(nextId)
+						}()
+					}
 				}
 			} else {
 				p.UpdateSamples(p, nil)

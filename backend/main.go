@@ -27,6 +27,7 @@ func main() {
 	g.Use(cors.Default())
 	NewSocketIO(g)
 	PlayerList = _PlayList{Player: New()}
+	PlayerList.Player.PlayList = &PlayerList
 	PlayerList.Player.UpdateSamples = func(p *Player, samples [][2]float64) {
 		if samples == nil {
 			if socketio != nil {
@@ -54,7 +55,7 @@ func main() {
 			ware[0][i] = samples[i][0]
 			ware[1][i] = samples[i][1]
 		}
-		
+
 		wareReal := fft.FFTReal(ware[0])
 		var max float64 = 0
 		for i := 0; i < len(samples); i++ {

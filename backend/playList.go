@@ -37,7 +37,7 @@ func (p *_PlayList) PlayList(files []string) error {
 }
 
 func (p *_PlayList) Next() (err error) {
-	if p.CurrentIndex > len(p.Files)-2 {
+	if p.CurrentIndex > len(p.Files)-1 {
 		p.CurrentIndex = len(p.Files) - 1
 	} else {
 		p.CurrentIndex = p.CurrentIndex + 1
@@ -55,10 +55,19 @@ func (p *_PlayList) Prev() (err error) {
 }
 
 func (p *_PlayList) Play(index int) (err error) {
+	p.CurrentIndex = index
 	p.Player.Play(p.Files[index])
 	return nil
 }
 
 func (p *_PlayList) Playing(isPlay bool) {
 	p.Player.IsPlay = isPlay
+}
+
+func (p *_PlayList) hasNext() (int, bool) {
+	if p.CurrentIndex < len(p.Files)-1 {
+		return p.CurrentIndex + 1, true
+	} else {
+		return -1, false
+	}
 }
