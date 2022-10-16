@@ -1,9 +1,10 @@
-const { app, BrowserWindow, ipcMain } = require("electron");
-
+const { app, BrowserWindow, Menu } = require("electron");
+const openAboutWindow = require("about-window").default;
 const freeport = require("freeport");
 const fetch = require("electron-fetch").default;
 const windowHeight = process.platform == "win32" ? 320 : 300;
 const { execFile } = require("child_process");
+
 let backendPort = 8000;
 let win = null;
 app.commandLine.appendSwitch("disable-web-security");
@@ -30,7 +31,7 @@ app.whenReady().then(() => {
         }
 
         win = new BrowserWindow({
-          title: "chimp3 v2",
+          title: "CHIMP3 V2 B站 痴货发明家",
           width: 360,
           height: windowHeight,
           maximizable: false,
@@ -50,6 +51,31 @@ app.whenReady().then(() => {
             win.webContents.openDevTools();
         }, 1000);
       });
+
+      const appMenu = {
+        label: "CHIMP3",
+        role: "appMenu",
+        submenu: [
+          {
+            label: "关于 CHIMP3",
+            click() {
+              openAboutWindow({
+                icon_path: __dirname + "/bin/frontend/icon.png",
+                product_name: "CHIMP3",
+                bug_report_url: "https://github.com/langwan/chimp3/issues",
+                copyright: "2022 痴货发明家(langwan)",
+                homepage: "https://space.bilibili.com/401571418",
+                description: "订制开发请找作者 B站 痴货发明家",
+                license: "MIT",
+                use_version_info: true,
+              });
+            },
+          },
+        ],
+      };
+      const menu = Menu.buildFromTemplate([appMenu]);
+
+      Menu.setApplicationMenu(menu);
     } catch (e) {
       console.log(e);
     }

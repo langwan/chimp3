@@ -16,10 +16,10 @@
     "dist": "electron-builder --win --mac"
   },
   "dependencies": {
+    "about-window": "^1.15.2",
     "electron-fetch": "^1.9.1",
     "freeport": "^1.0.5"
   },
-
   "build": {
     "appId": "chimp3",
     "mac": {
