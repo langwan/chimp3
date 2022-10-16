@@ -2,10 +2,24 @@
 
 一款跨平台 支持 mac / win 的MP3播放器
 
+![chimp3 v2 1]("resources/chimp3v21.png")
+![chimp3 v2 2]("resources/chimp3v22.png")
+![chimp3 v2 3]("resources/chimp3v23.png")
+![chimp3 v2 4]("resources/chimp3v24.png")
+
 ## 目录
 
+ - [功能](#功能)
  - [编译](#编译)
  - [代码结构](#代码结构)
+ - [安装包下载](#安装包下载)
+
+## 功能
+
+* 左键单击频谱界面进行多频谱切换，目前支持4种模式
+* 单曲暂停/继续
+* 多曲连续播放
+* 上一首/下一首
 
 ## 编译
 
@@ -24,8 +38,10 @@ cd scripts/package
 
 ## 代码结构
 
-* frontend 前端（react mui部分）
-* backend 背后运行的进程（go部分）
-* window 窗口外壳（electron）
+* frontend 前端（react mui d5js 部分）
+* backend 背后运行的进程（go-mp3 oto zenity go-dsp langgo 部分）
+* window 窗口外壳（electron 部分）
 
+
+## 安装包下载
 
