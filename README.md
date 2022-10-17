@@ -13,6 +13,7 @@
  - [编译](#编译)
  - [代码结构](#代码结构)
  - [安装包下载](#安装包下载)
+ - [V1版本](#V1版本)
 
 ## 功能
 
@@ -46,3 +47,9 @@ cd scripts/package
 ## 安装包下载
 
 https://github.com/langwan/chimp3/releases
+
+# V1版本
+
+如果你喜欢V1版本，可以切换到v1分支里找到它。
+
+![chimp3 v1](resources/chimp3v1.png)

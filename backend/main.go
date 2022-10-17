@@ -7,7 +7,9 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/langwan/langgo"
+	"github.com/langwan/langgo/components/hello"
 	"github.com/langwan/langgo/core"
+	"github.com/langwan/langgo/core/log"
 	"github.com/langwan/langgo/helpers/code"
 	helperGin "github.com/langwan/langgo/helpers/gin"
 	"github.com/mjibson/go-dsp/fft"
@@ -21,7 +23,8 @@ func main() {
 	var port int
 	flag.IntVar(&port, "port", 8000, "http port")
 	flag.Parse()
-	langgo.Run()
+	langgo.Run(&hello.Instance{})
+	log.Logger("app", "main").Info().Str("hello.message", hello.Get().Message).Send()
 	gin.SetMode(gin.ReleaseMode)
 	g := gin.New()
 	g.Use(cors.Default())
